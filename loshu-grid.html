@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loshu Grid & Numerology Calculator</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; width: 200px; margin: 20px auto; }
+        .grid div { padding: 15px; border: 1px solid #333; font-size: 18px; height: 50px; display: flex; justify-content: center; align-items: center; }
+        .name-calculation { margin-top: 20px; }
+        .name-output { display: flex; flex-direction: column; align-items: center; gap: 20px; font-size: 18px; }
+        .name-part { display: flex; gap: 15px; }
+        .letter { text-align: center; display: flex; flex-direction: column; align-items: center; }
+        input, select, button { padding: 8px; margin: 10px; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <h1>Loshu Grid & Numerology Calculator</h1>
+
+    <h2>Enter Date of Birth</h2>
+    <input type="date" id="dob">
+
+    <h2>Select Gender</h2>
+    <select id="gender">
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+    </select>
+    
+    <button onclick="generateLoshuGrid()">Generate Loshu Grid</button>
+
+    <h3>Loshu Grid</h3>
+    <div id="loshuGrid" class="grid">
+        <div id="cell4"></div>
+        <div id="cell9"></div>
+        <div id="cell2"></div>
+        <div id="cell3"></div>
+        <div id="cell5"></div>
+        <div id="cell7"></div>
+        <div id="cell8"></div>
+        <div id="cell1"></div>
+        <div id="cell6"></div>
+    </div>
+
+    <h3>Calculations</h3>
+    <p id="driver"></p>
+    <p id="conductor"></p>
+    <p id="kua"></p>
+
+    <h2>Chaldean Name Calculator</h2>
+    <input type="text" id="nameInput" placeholder="Enter Name">
+    <button onclick="calculateChaldean()">Calculate Chaldean Number</button>
+    <div id="nameOutput" class="name-output"></div>
+    <p id="chaldeanOutput"></p>
+
+    <script>
+        function reduceToSingleDigit(num) {
+            while (num > 9) {
+                num = Math.floor(num / 10) + (num % 10);
+            }
+            return num;
+        }
+
+        function generateLoshuGrid() {
+            const dobInput = document.getElementById('dob').value;
+            if (!dobInput) {
+                alert("Please enter a valid date of birth.");
+                return;
+            }
+
+            // Parse Date of Birth
+            const dob = new Date(dobInput);
+            const day = dob.getDate();
+            const month = dob.getMonth() + 1;
+            const year = dob.getFullYear();
+
+            // Define grid positions for each number
+            const loshuPositions = {
+                1: "cell1",
+                2: "cell2",
+                3: "cell3",
+                4: "cell4",
+                5: "cell5",
+                6: "cell6",
+                7: "cell7",
+                8: "cell8",
+                9: "cell9"
+            };
+
+            // Clear the grid
+            for (let i = 1; i <= 9; i++) {
+                document.getElementById(loshuPositions[i]).innerText = '';
+            }
+
+            // Map the date digits to the grid
+            const dobDigits = `${day}${month}${year}`.split('').map(Number);
+            dobDigits.forEach(digit => {
+                const cellId = loshuPositions[digit];
+                if (cellId) {
+                    document.getElementById(cellId).innerText += digit;
+                }
+            });
+
+            // Calculate Driver
+            const driver = reduceToSingleDigit(day);
+            document.getElementById("driver").innerText = `Driver: ${driver}`;
+            document.getElementById(loshuPositions[driver]).innerText += driver;
+
+            // Calculate Conductor
+            const conductor = reduceToSingleDigit(
+                driver + reduceToSingleDigit(month) +
+                reduceToSingleDigit(Math.floor(year / 1000)) +
+                reduceToSingleDigit(Math.floor((year % 1000) / 100)) +
+                reduceToSingleDigit(Math.floor((year % 100) / 10)) +
+                reduceToSingleDigit(year % 10)
+            );
+            document.getElementById("conductor").innerText = `Conductor: ${conductor}`;
+            document.getElementById(loshuPositions[conductor]).innerText += conductor;
+
+            // Calculate Kua Number based on Gender
+            const gender = document.getElementById('gender').value;
+            const yearSum = reduceToSingleDigit(
+                Math.floor(year / 1000) +
+                Math.floor((year % 1000) / 100) +
+                Math.floor((year % 100) / 10) +
+                (year % 10)
+            );
+            const kuaNumber = reduceToSingleDigit(gender === 'male' ? 11 - yearSum : 4 + yearSum);
+            document.getElementById("kua").innerText = `Kua Number: ${kuaNumber}`;
+            document.getElementById(loshuPositions[kuaNumber]).innerText += kuaNumber;
+        }
+
+        function calculateChaldean() {
+            const name = document.getElementById("nameInput").value.toUpperCase().trim();
+            const chaldeanValues = {
+                A: 1, B: 2, C: 3, D: 4, E: 5, F: 8, G: 3, H: 5, I: 1, J: 1, K: 2, 
+                L: 3, M: 4, N: 5, O: 7, P: 8, Q: 1, R: 2, S: 3, T: 4, U: 6, V: 6, 
+                W: 6, X: 5, Y: 1, Z: 7
+            };
+
+            // Clear previous name output
+            document.getElementById("nameOutput").innerHTML = '';
+            let total = 0;
+            const parts = name.split(" "); // Split name by spaces
+
+            // Calculate Chaldean value for each part of the name
+            parts.forEach((part, index) => {
+                let partTotal = 0;
+                const partDiv = document.createElement("div");
+                partDiv.className = "name-part";
+
+                // Calculate and display values for each letter in the part
+                part.split('').forEach(char => {
+                    if (chaldeanValues[char]) {
+                        const value = chaldeanValues[char];
+                        partTotal += value;
+
+                        // Display each letter with its corresponding number below it
+                        const letterDiv = document.createElement("div");
+                        letterDiv.className = "letter";
+                        letterDiv.innerHTML = `<div>${char}</div><div>${value}</div>`;
+                        partDiv.appendChild(letterDiv);
+                    }
+                });
+
+                // Display the part total in two steps: original part sum, and reduced to single digit
+                partDiv.innerHTML += `<div><strong>Part Total: ${partTotal}</strong></div>`;
+                partDiv.innerHTML += `<div><strong>Single Digit: ${reduceToSingleDigit(partTotal)}</strong></div>`;
+                document.getElementById("nameOutput").appendChild(partDiv);
+
+                // Add the part total to the overall total
+                total += partTotal;
+            });
+
+            // Reduce total to a single digit
+            total = reduceToSingleDigit(total);
+            document.getElementById("chaldeanOutput").innerText = `Final Chaldean Number: ${total}`;
+        }
+    </script>
+</body>
+</html>
